@@ -8,32 +8,46 @@ Created on Thu Nov 21 15:01:04 2019
 import pandas as pd
 import matplotlib.pyplot as plt
 import multiprocessing as mp
+import re
 
 from stopwatch import stopwatch
 from longest_common_substring import algorithms
 
 from string import ascii_lowercase as alpha
-from random import choices, choice
+from random import choices, choice, randrange
 from tqdm import trange
 
-TRIALS = 100
-MAX_LEN = 1000
-MAX_TIME = 3
+TRIALS = 9
+MAX_LEN = 5000
+MAX_TIME = 2
 DATA_TYPE = 'random'
+TEXT_DATA = 'moby_dick.txt'
+
+# helper function to read in utf-8 text file
+def read_text(file_name):
+    with open(file_name, 'r', encoding='utf-8') as file:
+        return re.sub('\s+', ' ', file.read()).strip()
+
+book = read_text('moby_dick.txt')
 
 # generate strings a and b for i tests based on the type of data you want
 def create_data(i, version=DATA_TYPE):
     if version == 'random':
-        return [(''.join(choices(alpha, k=i)), ''.join(choices(alpha, k=i)))\
+        data = [(''.join(choices(alpha, k=i)), ''.join(choices(alpha, k=i)))\
                 for _ in range(TRIALS)]
     elif version == 'worst':
-        return [[choice(alpha)*i]*2 for _ in range(TRIALS)]
+        data = [[choice(alpha)*i]*2 for _ in range(TRIALS)]
     elif version == 'text':
-        print("I'm working on it ...")
-        raise NotImplementedError
+        data = list()
+        for _ in range(TRIALS):
+            x = randrange(len(book) - i + 1)
+            y = randrange(len(book) - i + 1)
+            data.append((book[x:x+i], book[y:y+i]))
     else:
         print(f'{version} creation data type does not exist.')
         raise ValueError
+    
+    return data
 
 # test algo for each item in data return time in seconds it takes
 # best of 3, corrected for time
@@ -67,7 +81,6 @@ def task_algo(algo, data, record, skip, bar):
     if p.exitcode is None:
         bar.write(f'Skipping {algo.__name__} on {i} due to timeout.')
         skip[algo.__name__] = True
-
 
 # the experiment
 if __name__ == '__main__':
