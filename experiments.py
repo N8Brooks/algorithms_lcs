@@ -17,18 +17,18 @@ from string import ascii_lowercase as alpha
 from random import choices, choice, randrange
 from tqdm import trange
 
-TRIALS = 9
-MAX_LEN = 5000
-MAX_TIME = 2
-DATA_TYPE = 'random'
-TEXT_DATA = 'moby_dick.txt'
+TRIALS = 9                              # how many trials of each n
+MAX_LEN = 5000                          # max n that should be used
+MAX_TIME = 2                            # how long before algo timeout
+DATA_TYPE = 'text'                      # ['random', 'worst', 'text']
+TEXT_DATA = 'text_files/moby_dick.txt'  # your text file for text data
 
 # helper function to read in utf-8 text file
 def read_text(file_name):
     with open(file_name, 'r', encoding='utf-8') as file:
         return re.sub('\s+', ' ', file.read()).strip()
 
-book = read_text('moby_dick.txt')
+book = read_text(TEXT_DATA)
 
 # generate strings a and b for i tests based on the type of data you want
 def create_data(i, version=DATA_TYPE):
@@ -73,13 +73,18 @@ def task_algo(algo, data, record, skip, bar):
     if skip.get(algo.__name__, False):
         return
     
-    p = mp.Process(target=test_algo, args=(algo, data, record))
-    p.start()
-    p.join(timeout=MAX_TIME)
-    p.terminate()
-    
-    if p.exitcode is None:
-        bar.write(f'Skipping {algo.__name__} on {i} due to timeout.')
+    # run the lcs function - if it excepts or times out, skip it from now on
+    try:
+        p = mp.Process(target=test_algo, args=(algo, data, record))
+        p.start()
+        p.join(timeout=MAX_TIME)
+        p.terminate()
+        
+        if p.exitcode is None:
+            bar.write(f'Skipping {algo.__name__} on {i} due to timeout.')
+            skip[algo.__name__] = True
+    except:
+        bar.write(f'Skipping {algo.__name__} on {i} due to exception.')
         skip[algo.__name__] = True
 
 # the experiment
@@ -89,6 +94,7 @@ if __name__ == '__main__':
     skip = manager.dict()
     df = pd.DataFrame()
     
+    # perform the experiments increasing n each time
     bar = trange(MAX_LEN)
     for i in bar:
         
@@ -104,13 +110,17 @@ if __name__ == '__main__':
             break
         
         df = df.append(pd.Series(dict(record), name=i))
+        
+        # record the data every 100 iterations
+        if i % 100 is 0:
+            df.to_csv(f'{DATA_TYPE}_data.csv')
+    
+    # record the final
+    df.to_csv(f'{DATA_TYPE}_data.csv')
     
     # plot data
     df.plot()
     plt.show()
-    
-    # record data
-    df.to_csv(f'{DATA_TYPE}_data.csv')
     
     
     

@@ -5,11 +5,15 @@ Created on Wed Nov 20 18:05:58 2019
 @author: DSU
 """
 
+import numpy as np
+import sys
+
 from collections import defaultdict
 from itertools import combinations
 from itertools import accumulate, chain
-import numpy as np
-import sys
+from suffixtree import SuffixTree
+from string import ascii_lowercase as alpha
+from random import choices, randrange
 
 # helper function to print the common substrings of length m between a, b
 def print_common(m, a, b):
@@ -80,12 +84,9 @@ def binary_search_lcs(a, b):
 
 # exponentially increase, then binary search
 def exp_search_lcs(a, b):
-    # a should be shorter
-    if len(b) < len(a):
-        a, b = b, a
-    
     # left and right bounds, max sizes
     len_a, len_b = len(a) + 1, len(b) + 1
+    short = min(len(a), len(b))
     
     # returns if there is a common substring of length m between a, b
     def found_common(m):
@@ -94,8 +95,38 @@ def exp_search_lcs(a, b):
     
     # exponentially increase l and r
     l, r = 0, 1
-    while found_common(r):
+    while r < len_a and found_common(r):
         l, r = r + 1, r * 2
+    r = min(r, short)
+    
+    # right-most binary search on if substring length is possible
+    while l <= r:
+        m = (l + r) // 2
+        
+        if found_common(m):
+            l = m + 1
+        else:
+            r = m - 1
+    
+    return r
+
+# same as last one except uses a suffix tree to determine if substring of a
+def suffix_search_lcs(a, b):
+    # left and right bounds, max sizes
+    len_a, len_b = len(a) + 1, len(b) + 1
+    short = min(len(a), len(b))
+    
+    tree = SuffixTree(False, [a])
+    
+    # returns if there is a common substring of length m between a, b
+    def found_common(m):
+        return any(tree.findStringIdx(b[i-m:i]) for i in range(m, len_b))
+    
+    # exponentially increase l and r
+    l, r = 0, 1
+    while r < len_a and found_common(r):
+        l, r = r + 1, r * 2
+    r = min(r, short)
     
     # right-most binary search on if substring length is possible
     while l <= r:
@@ -123,25 +154,6 @@ def dynamic_lcs(a, b):
     
     # return highest (defaults to 0)
     return max(0, 0, *dp.values())
-
-# space optimized version of dynamic from https://www.geeksforgeeks.org/long
-# est-common-substring-space-optimized-dp-solution/
-def dynamic_opt_lcs(a, b):
-    m, n = len(a) + 1, len(b) + 1
-    
-    result, cur_row = 0, 0
-    
-    len_mat = np.zeros((2, n), dtype=np.int32)
-    
-    for i in range(1, m):
-        for j in range(1, n):
-            if a[i - 1] == b[j - 1]:
-                len_mat[cur_row][j] = len_mat[1 - cur_row][j - 1] + 1
-                result = max(result, len_mat[cur_row][j])
- 
-        cur_row = 1 - cur_row 
-  
-    return result
 
 # recursive solution from https://www.geeksforgeeks.org/longest-common-
 # substring-dp-29/
@@ -420,13 +432,13 @@ def suffix_tree_lcs(s, t):
 
 # list of all algorithms
 algorithms = [brute_force_lcs, short_hi_lcs, short_lo_lcs, binary_search_lcs,\
-              exp_search_lcs, dynamic_lcs, dynamic_opt_lcs, recursive_lcs,\
+              suffix_search_lcs, exp_search_lcs, dynamic_lcs, recursive_lcs,\
               iterative_lcs, functional_lcs, suffix_tree_lcs]
 
 # driver code for testing
 if __name__ == '__main__':
-    # test cases
-    tests = [('abcdefg', 'ace', 1),
+    # hard test cases
+    tests = [('abcdecfcg', 'ace', 1),
              ('oldsite: wiki', 'site:?', 5),
              ('lab num 7', 'b nu', 4),
              ('big test', 'big test', 8),
@@ -438,6 +450,22 @@ if __name__ == '__main__':
         #print([algo(a, b) for algo in algorithms])
         for algo in algorithms:
             assert algo(a, b) == ans
+            
+    # creating large random test case where b has a portion of string a
+    length = 1000
+    i = randrange(length)
+    j = randrange(i, length)
+    insert = randrange(j-i)
+    a = ''.join(choices(alpha, k=length))
+    b = ''.join(choices(alpha, k=length-j+i))
+    b = b[:insert] + a[i:j] + b[insert:]
+    ans = brute_force_lcs(a, b)
+    
+    # hard coded algoriths that are fast enough
+    for algo in [short_hi_lcs, short_lo_lcs, binary_search_lcs, 
+                 suffix_search_lcs, exp_search_lcs, dynamic_lcs,
+                 iterative_lcs, suffix_tree_lcs]:
+        assert algo(a, b) == ans
     
     # confirm tests passed if it makes it here
     print('All test cases passed')

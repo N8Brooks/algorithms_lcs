@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from longest_common_substring import algorithms
 
-DATA_TYPE = 'random'
+DATA_TYPE = 'worst'
 
 algorithms = [algo.__name__ for algo in algorithms]
 df = pd.read_csv(f'{DATA_TYPE}_data.csv', index_col='Unnamed: 0')
