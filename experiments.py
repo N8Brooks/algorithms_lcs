@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 import re
+import sys
 
 from stopwatch import stopwatch
 from longest_common_substring import algorithms
@@ -17,11 +18,13 @@ from string import ascii_lowercase as alpha
 from random import choices, choice, randrange
 from tqdm import trange
 
-TRIALS = 9                              # how many trials of each n
-MAX_LEN = 5000                          # max n that should be used
-MAX_TIME = 2                            # how long before algo timeout
-DATA_TYPE = 'text'                      # ['random', 'worst', 'text']
+TRIALS = 1                              # how many trials of each n
+TAKE = 1                                  # takes TAKE experiments out of TRIALS
+MAX_LEN = 10000                          # max n that should be used
+MAX_TIME = 10                            # how long before algo timeout
+INCREMENT = 10                          # how much to increase n by
 TEXT_DATA = 'text_files/moby_dick.txt'  # your text file for text data
+DATA_TYPE = 'random'                    # default data type
 
 # helper function to read in utf-8 text file
 def read_text(file_name):
@@ -34,6 +37,9 @@ book = read_text(TEXT_DATA)
 def create_data(i, version=DATA_TYPE):
     if version == 'random':
         data = [(''.join(choices(alpha, k=i)), ''.join(choices(alpha, k=i)))\
+                for _ in range(TRIALS)]
+    elif version == 'sided':
+        data = [(''.join(choices(alpha, k=1000)), ''.join(choices(alpha, k=i)))\
                 for _ in range(TRIALS)]
     elif version == 'worst':
         data = [[choice(alpha)*i]*2 for _ in range(TRIALS)]
@@ -50,7 +56,7 @@ def create_data(i, version=DATA_TYPE):
     return data
 
 # test algo for each item in data return time in seconds it takes
-# best of 3, corrected for time
+# best of TAKE, corrected for time
 def test_algo(algo, data, record):
     # timing class and times data structure
     clock = stopwatch()
@@ -63,8 +69,8 @@ def test_algo(algo, data, record):
         algo(a, b)
         times.append(clock.time())
     
-    # find best of 3, find average, correct for nanoseconds, add to record
-    times = sorted(times)[:len(data) // 3]
+    # find best of TAKE, find average, correct for nanoseconds, add to record
+    times = sorted(times)[:TAKE // len(data)]
     average = sum(times) / len(times) / 1e9
     record[algo.__name__] = average
 
@@ -89,13 +95,20 @@ def task_algo(algo, data, record, skip, bar):
 
 # the experiment
 if __name__ == '__main__':
+    # make sure that you have a file type
+    assert len(sys.argv) is 2
+    
+    # make sure the argument makes sense
+    DATA_TYPE = str(sys.argv[1])
+    assert DATA_TYPE in ['random', 'sided', 'worst', 'text']
+    
     manager = mp.Manager()
     record = manager.dict()
     skip = manager.dict()
     df = pd.DataFrame()
     
     # perform the experiments increasing n each time
-    bar = trange(MAX_LEN)
+    bar = trange(0, MAX_LEN, INCREMENT)
     for i in bar:
         
         strings = create_data(i)
@@ -117,10 +130,6 @@ if __name__ == '__main__':
     
     # record the final
     df.to_csv(f'{DATA_TYPE}_data.csv')
-    
-    # plot data
-    df.plot()
-    plt.show()
     
     
     

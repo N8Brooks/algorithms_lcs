@@ -22,14 +22,14 @@ def print_common(m, a, b):
     found = {b[i-m:i] for i in range(m, len_b) if b[i-m:i] in a_substr}
     print('\n'.join(found))
 
-# generate sets of every substring, find longest common - O(n^2)
+# generate sets of every substring, find longest common
 def brute_force_lcs(a, b):
     a_substr = {a[x:y] for x, y in combinations(range(len(a)+1), 2)}
     b_substr = {b[x:y] for x, y in combinations(range(len(b)+1), 2)}
     both = a_substr.intersection(b_substr)
     return len(max(both, key=len)) if both else 0
 
-# starts at highest possible then searches until it finds common - O(n^2)
+# starts at highest possible then searches until it finds common
 def short_hi_lcs(a, b):
     # a should be shorter
     if len(b) < len(a):
@@ -44,7 +44,7 @@ def short_hi_lcs(a, b):
     # didn't find any
     return 0
 
-# starts at 1 then searches until it can't find one - O(n^2)
+# starts at 1 then searches until it can't find one
 def short_lo_lcs(a, b):
     # a should be shorter
     if len(b) < len(a):
@@ -60,7 +60,7 @@ def short_lo_lcs(a, b):
     # max size hit
     return len(a)
     
-# binary search of lenths - O(n^2)
+# binary search of lenths
 def binary_search_lcs(a, b):
     # a should be shorter
     if len(b) < len(a):
@@ -432,7 +432,7 @@ def suffix_tree_lcs(s, t):
 
 # list of all algorithms
 algorithms = [brute_force_lcs, short_hi_lcs, short_lo_lcs, binary_search_lcs,\
-              suffix_search_lcs, exp_search_lcs, dynamic_lcs, recursive_lcs,\
+              exp_search_lcs, suffix_search_lcs, dynamic_lcs, recursive_lcs,\
               iterative_lcs, functional_lcs, suffix_tree_lcs]
 
 # driver code for testing

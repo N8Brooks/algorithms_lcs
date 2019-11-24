@@ -5,11 +5,17 @@ Created on Fri Nov 22 14:54:36 2019
 @author: DSU
 """
 
+import sys
 import pandas as pd
 import numpy as np
 from longest_common_substring import algorithms
 
-DATA_TYPE = 'worst'
+# specify or default the file you want to plot
+if len(sys.argv) > 1:
+    DATA_TYPE = sys.argv[1]
+    assert DATA_TYPE in ['random', 'sided', 'worst', 'text']
+else:
+    DATA_TYPE = 'sided'    # ['random', 'sided', 'worst', 'text']
 
 algorithms = [algo.__name__ for algo in algorithms]
 df = pd.read_csv(f'{DATA_TYPE}_data.csv', index_col='Unnamed: 0')
